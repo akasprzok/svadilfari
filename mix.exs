@@ -2,7 +2,7 @@ defmodule Svadilfari.MixProject do
   use Mix.Project
 
   @version "0.1.0"
-@url "https://github.com/akasprzok/svadilfari"
+  @url "https://github.com/akasprzok/svadilfari"
 
   def project do
     [
@@ -24,7 +24,7 @@ defmodule Svadilfari.MixProject do
         coveralls: :test,
         "coveralls.detail": :test,
         "coveralls.post": :test,
-        "coveralls.html": :test,
+        "coveralls.html": :test
       ]
     ]
   end
