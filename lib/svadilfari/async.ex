@@ -1,4 +1,7 @@
 defmodule Svadilfari.Async do
+  @moduledoc """
+  Handles async requests to Loki
+  """
   use Task
 
   def send(client, pid, ref, request) do
