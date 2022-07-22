@@ -5,13 +5,10 @@ defmodule Svadilfari do
 
   @behaviour :gen_event
 
-  @default_level :info
+  @default_level nil
   @default_format Logger.Formatter.compile(nil)
   @default_max_buffer 100
   @default_metadata []
-  @default_client_opts [
-    org_id: "tenant1"
-  ]
   @default_url "http://localhost:3100"
 
   @type t :: %__MODULE__{
@@ -22,11 +19,14 @@ defmodule Svadilfari do
           max_buffer: non_neg_integer(),
           metadata: Keyword.t(),
           labels: list({String.t(), String.t()}),
-          client: Sleipnir.Client.t()
+          client: struct(),
+          ref: reference(),
+          output: term()
         }
 
   @enforce_keys [
-    :labels, :client
+    :labels,
+    :client
   ]
 
   defstruct buffer: [],
@@ -36,11 +36,12 @@ defmodule Svadilfari do
             max_buffer: @default_max_buffer,
             metadata: @default_metadata,
             labels: nil,
-            client: nil
-
+            client: nil,
+            ref: nil,
+            output: nil
 
   @impl true
-  def init(:svadilfari) do
+  def init(__MODULE__) do
     config = Application.get_env(:logger, :svadilfari)
     {:ok, do_init(config)}
   end
@@ -65,17 +66,20 @@ defmodule Svadilfari do
       not meet_level?(level, log_level) ->
         {:ok, state}
 
+      is_nil(state.ref) ->
+        {:ok, log_event(level, msg, ts, md, state)}
+
       buffer_size < max_buffer ->
         {:ok, buffer_event(level, msg, ts, md, state)}
 
       buffer_size === max_buffer ->
         state = buffer_event(level, msg, ts, md, state)
-        {:ok, send(state)}
+        {:ok, await_io(state)}
     end
   end
 
   def handle_event(:flush, state) do
-    {:ok, send(state)}
+    {:ok, flush(state)}
   end
 
   def handle_event(_, state) do
@@ -83,6 +87,10 @@ defmodule Svadilfari do
   end
 
   @impl true
+  def handle_info({:io_reply, ref, msg}, %{ref: ref} = state) do
+    {:ok, handle_io_reply(msg, state)}
+  end
+
   def handle_info(_, state) do
     {:ok, state}
   end
@@ -106,8 +114,8 @@ defmodule Svadilfari do
   end
 
   defp configure(opts, state) do
-    config = configure_merge(Application.get_env(:logger, :console), opts)
-    Application.put_env(:logger, :console, config)
+    config = configure_merge(Application.get_env(:logger, :svadilfari), opts)
+    Application.put_env(:logger, :svadilfari, config)
     do_init(config, state)
   end
 
@@ -116,16 +124,28 @@ defmodule Svadilfari do
     format = Logger.Formatter.compile(Keyword.get(opts, :format))
     metadata = Keyword.get(opts, :metadata, @default_metadata) |> configure_metadata()
     max_buffer = Keyword.get(opts, :max_buffer, @default_max_buffer)
+    labels = Keyword.fetch!(opts, :labels)
 
-    client_opts = Keyword.get(opts, :client_opts, @default_client_opts)
-    url = Keyword.get(opts, :url, @default_url)
-    client = Sleipnir.client(url, client_opts)
+    client =
+      Keyword.fetch!(opts, :client)
+      |> case do
+        client when is_struct(client) ->
+          client
+
+        client_opts when is_list(client_opts) ->
+          client_opts = Keyword.get(client_opts, :opts, [])
+
+          opts
+          |> Keyword.get(:url, @default_url)
+          |> Sleipnir.Client.Tesla.new(client_opts)
+      end
 
     [
       level: level,
       format: format,
       metadata: metadata,
       max_buffer: max_buffer,
+      labels: labels,
       client: client
     ]
   end
@@ -148,10 +168,37 @@ defmodule Svadilfari do
     end)
   end
 
+  defp log_event(level, msg, ts, md, state) do
+    output = [format_entry(level, msg, ts, md, state)]
+    %{state | ref: async_io(state.client, output, state.labels), output: output}
+  end
+
   defp buffer_event(level, msg, ts, md, state) do
     %{buffer: buffer, buffer_size: buffer_size} = state
-    buffer = [buffer | format_entry(level, msg, ts, md, state)]
+    buffer = [format_entry(level, msg, ts, md, state) | buffer]
     %{state | buffer: buffer, buffer_size: buffer_size + 1}
+  end
+
+  defp async_io(client, output, labels) do
+    ref = make_ref()
+
+    request =
+      output
+      |> Enum.reverse()
+      |> Sleipnir.stream(labels)
+      |> Sleipnir.request()
+
+    Svadilfari.Async.send(client, self(), ref, request)
+    ref
+  end
+
+  defp await_io(%{ref: nil} = state), do: state
+
+  defp await_io(%{ref: ref} = state) do
+    receive do
+      {:io_reply, ^ref, :ok} -> handle_io_reply(:ok, state)
+      {:io_reply, ^ref, error} -> handle_io_reply(error, state) |> await_io()
+    end
   end
 
   defp format_entry(level, msg, ts, md, state) do
@@ -181,14 +228,31 @@ defmodule Svadilfari do
     end)
   end
 
-  defp send(%{buffer_size: 0, buffer: []} = state), do: state
+  defp log_buffer(%{buffer_size: 0, buffer: []} = state), do: state
 
-  defp send(state) do
-    state.buffer
-    |> Sleipnir.stream(state.labels)
-    |> Sleipnir.request()
-    |> state.client.push()
+  defp log_buffer(state) do
+    %{
+      state
+      | ref: async_io(state.client, state.buffer, state.labels),
+        buffer: [],
+        buffer_size: 0,
+        output: state.buffer
+    }
+  end
 
-    %{state | buffer: [], buffer_size: 0}
+  defp handle_io_reply(:ok, state) do
+    log_buffer(%{state | ref: nil, output: nil})
+  end
+
+  defp handle_io_reply({:error, reason}, _) do
+    raise "failure while logging to Loki: " <> inspect(reason)
+  end
+
+  defp flush(%{ref: nil} = state), do: state
+
+  defp flush(state) do
+    state
+    |> await_io()
+    |> flush()
   end
 end

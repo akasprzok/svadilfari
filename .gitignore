@@ -24,3 +24,6 @@ svadilfari-*.tar
 
 # Temporary files, for example, from tests.
 /tmp/
+
+# docker-compose
+.data
