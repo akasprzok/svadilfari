@@ -1,7 +1,7 @@
 defmodule Svadilfari.MixProject do
   use Mix.Project
 
-  @version "0.1.0"
+  @version "0.1.1"
   @url "https://github.com/akasprzok/svadilfari"
 
   def project do
@@ -44,7 +44,7 @@ defmodule Svadilfari.MixProject do
       {:ex_doc, "~> 0.28", only: :dev, runtime: false},
       {:credo, "~> 1.6", only: [:dev, :test], runtime: false},
       {:excoveralls, "~> 0.10", only: :test},
-      {:sleipnir, path: "../sleipnir"},
+      {:sleipnir, "~> 0.1.1"},
       {:bypass, "~> 2.1", only: :test}
     ]
   end
@@ -60,7 +60,7 @@ defmodule Svadilfari.MixProject do
 
   defp package do
     [
-      licneses: ["MIT"],
+      licenses: ["MIT"],
       links: %{"GitHub" => @url},
       files: ~w(mix.exs lib README.md LICENSE.md),
       maintainers: ["Andreas Kasprzok"]

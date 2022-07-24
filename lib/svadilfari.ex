@@ -136,7 +136,6 @@ defmodule Svadilfari do
           opts = Keyword.get(client_opts, :opts, [])
 
           client_opts
-          |> IO.inspect()
           |> Keyword.get(:url, @default_url)
           |> Sleipnir.Client.Tesla.new(opts)
       end
