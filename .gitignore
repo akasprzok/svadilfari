@@ -27,3 +27,6 @@ svadilfari-*.tar
 
 # docker-compose
 .data
+
+# environment config for local testing.
+.envrc

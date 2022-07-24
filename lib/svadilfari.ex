@@ -133,11 +133,12 @@ defmodule Svadilfari do
           client
 
         client_opts when is_list(client_opts) ->
-          client_opts = Keyword.get(client_opts, :opts, [])
+          opts = Keyword.get(client_opts, :opts, [])
 
-          opts
+          client_opts
+          |> IO.inspect()
           |> Keyword.get(:url, @default_url)
-          |> Sleipnir.Client.Tesla.new(client_opts)
+          |> Sleipnir.Client.Tesla.new(opts)
       end
 
     [
@@ -182,13 +183,7 @@ defmodule Svadilfari do
   defp async_io(client, output, labels) do
     ref = make_ref()
 
-    request =
-      output
-      |> Enum.reverse()
-      |> Sleipnir.stream(labels)
-      |> Sleipnir.request()
-
-    Svadilfari.Async.send(client, self(), ref, request)
+    Svadilfari.Async.send(client, self(), ref, output, labels)
     ref
   end
 
