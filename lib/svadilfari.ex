@@ -1,6 +1,46 @@
 defmodule Svadilfari do
-  @moduledoc """
-  A Logger Backend for Grafana Loki.
+  @moduledoc ~S"""
+  A logger backend that logs messages to Grafana Loki.
+
+  ## Options
+
+    * `:level` - the level to be logged by this backend.
+      Note that messages are filtered by the general
+      `:level` configuration for the `:logger` application first.
+
+    * `:format` - the format message used to print logs.
+      Defaults to: `"\n$time $metadata[$level] $message\n"`.
+      It may also be a `{module, function}` tuple that is invoked
+      with the log level, the message, the current timestamp and
+      the metadata and must return `t:IO.chardata/0`. See
+      `Logger.Formatter`.
+
+    * `:metadata` - the metadata to be printed by `$metadata`.
+      Defaults to an empty list (no metadata).
+      Setting `:metadata` to `:all` prints all metadata. See
+      the "Metadata" section for more information.
+
+    * `:max_buffer` - maximum events to buffer while waiting
+      for the client to successfully send the logs to Grafana Loki.
+      Once the buffer is full, the backend will block until
+      a confirmation is received.
+
+    * `:labels` - A list of {String.t, String.t} tuples that represents Grafana Loki labels.
+
+    * `:client` - a keyword list of the following options:
+      * `url` - The URL to which logs should be pushed. The `loki/api/v1/push` path is inferred
+        and does not need to be specified.
+      * `opts` - Svadilfari uses Sleipnir's `Sleipnir.Client.Tesla` client under the hood.
+        Opts can be passed to it here.
+
+  Here's an example of how to configure the `Svadilfari` backend in a
+  `config/config.exs` file:
+
+      config :logger, :backends, [:console, Svadilfari]
+
+      config :logger, :svadilfari,
+        format: "\n$time $metadata[$level] $message\n",
+        metadata: [:user_id]
   """
 
   @behaviour :gen_event
