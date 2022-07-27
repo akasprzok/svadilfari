@@ -41,17 +41,19 @@ defmodule Svadilfari.MixProject do
   # Run "mix help deps" to learn about dependencies.
   defp deps do
     [
-      {:ex_doc, "~> 0.28", only: :dev, runtime: false},
-      {:credo, "~> 1.6", only: [:dev, :test], runtime: false},
-      {:excoveralls, "~> 0.10", only: :test},
       {:sleipnir, "~> 0.1.1"},
-      {:bypass, "~> 2.1", only: :test}
+      # Testing
+      {:bypass, "~> 2.1", only: :test},
+      {:excoveralls, "~> 0.10", only: :test},
+      # Docs & Linting
+      {:credo, "~> 1.6", only: [:dev, :test], runtime: false},
+      {:ex_doc, "~> 0.28", only: :dev, runtime: false}
     ]
   end
 
   defp description do
     """
-    A Logger Backend for sending logs directly to Grafana Loki.
+    An Elixir Logger Backend for Grafana Loki.
     """
   end
 
