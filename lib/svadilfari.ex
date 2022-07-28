@@ -278,7 +278,7 @@ defmodule Svadilfari do
     log_buffer(%{state | ref: nil, output: nil})
   end
 
-  defp handle_io_reply({:error, reason}, _) do
+  defp handle_io_reply(reason, _) do
     raise "failure while logging to Loki: " <> inspect(reason)
   end
 
