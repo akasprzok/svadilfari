@@ -1,3 +1,9 @@
+![main](https://github.com/akasprzok/svadilfari/actions/workflows/main.yml/badge.svg?branch=main)
+[![Hex](https://img.shields.io/hexpm/v/svadilfari.svg)](https://hex.pm/packages/svadilfari/)
+[![Hex Docs](https://img.shields.io/badge/hex-docs-informational.svg)](https://hexdocs.pm/svadilfari/)
+![License](https://img.shields.io/hexpm/l/svadilfari)
+[![Coverage Status](https://coveralls.io/repos/github/akasprzok/svadilfari/badge.svg?branch=main)](https://coveralls.io/github/akasprzok/svadilfari?branch=main)
+
 # Svadilfari
 
 A logger backend for sending logs directly to Grafana Loki.
