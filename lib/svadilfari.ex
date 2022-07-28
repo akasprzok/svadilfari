@@ -45,6 +45,8 @@ defmodule Svadilfari do
 
   @behaviour :gen_event
 
+  alias Sleipnir.Client.Tesla, as: TeslaClient
+
   @default_level nil
   @default_format Logger.Formatter.compile(nil)
   @default_max_buffer 100
@@ -177,7 +179,7 @@ defmodule Svadilfari do
 
           client_opts
           |> Keyword.get(:url, @default_url)
-          |> Sleipnir.Client.Tesla.new(opts)
+          |> TeslaClient.new(opts)
       end
 
     [

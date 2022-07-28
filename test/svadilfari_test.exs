@@ -5,6 +5,7 @@ defmodule SvadilfariTest do
   require Logger
 
   alias Logproto.PushRequest
+  alias Sleipnir.Client.Tesla, as: TeslaClient
 
   def bypass_happy_path(_) do
     bypass = Bypass.open()
@@ -12,7 +13,7 @@ defmodule SvadilfariTest do
     :ok =
       Logger.configure_backend(
         Svadilfari,
-        client: Sleipnir.Client.Tesla.new("http://localhost:#{bypass.port}/")
+        client: TeslaClient.new("http://localhost:#{bypass.port}/")
       )
 
     pid = self()
