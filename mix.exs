@@ -1,7 +1,7 @@
 defmodule Svadilfari.MixProject do
   use Mix.Project
 
-  @version "0.1.2"
+  @version "0.1.3"
   @url "https://github.com/akasprzok/svadilfari"
 
   def project do
@@ -41,7 +41,7 @@ defmodule Svadilfari.MixProject do
   # Run "mix help deps" to learn about dependencies.
   defp deps do
     [
-      {:sleipnir, "~> 0.1"},
+      {:sleipnir, "~> 0.1.2"},
       # Testing
       {:bypass, "~> 2.1", only: :test},
       {:excoveralls, "~> 0.10", only: :test},

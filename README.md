@@ -15,7 +15,7 @@ The package can be installed by adding `svadilfari` to your list of dependencies
 ```elixir
 def deps do
   [
-    {:svadilfari, "~> 0.1.2"}
+    {:svadilfari, "~> 0.1"}
   ]
 end
 ```
