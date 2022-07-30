@@ -41,7 +41,7 @@ defmodule Svadilfari.MixProject do
   # Run "mix help deps" to learn about dependencies.
   defp deps do
     [
-      {:sleipnir, "~> 0.1.1"},
+      {:sleipnir, "~> 0.1"},
       # Testing
       {:bypass, "~> 2.1", only: :test},
       {:excoveralls, "~> 0.10", only: :test},
