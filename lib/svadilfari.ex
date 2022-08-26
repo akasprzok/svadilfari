@@ -27,6 +27,11 @@ defmodule Svadilfari do
 
     * `:labels` - A list of {String.t, String.t} tuples that represents Grafana Loki labels.
 
+    * `:derived_labels`: A `{module, function}` tuple that is invoked
+      with the log level, the message, the current timestamp and
+      the metadata and must return a list of {String.t, String.t} tuples
+      which will be merged into :labels, overwriting existing keys.
+
     * `:client` - a keyword list of the following options:
       * `url` - The URL to which logs should be pushed. The `loki/api/v1/push` path is inferred
         and does not need to be specified.
@@ -53,14 +58,17 @@ defmodule Svadilfari do
   @default_metadata []
   @default_url "http://localhost:3100"
 
+  @type labels :: list({String.t(), String.t()})
+
   @type t :: %__MODULE__{
-          buffer: list(Sleipnir.entry()),
+          buffer: %{labels => [Sleipnir.entry()]},
           buffer_size: non_neg_integer(),
           format: term(),
           level: Logger.level(),
           max_buffer: non_neg_integer(),
           metadata: Keyword.t(),
-          labels: list({String.t(), String.t()}),
+          labels: labels(),
+          derived_labels: {module(), atom()},
           client: struct(),
           ref: reference(),
           output: term()
@@ -71,13 +79,14 @@ defmodule Svadilfari do
     :client
   ]
 
-  defstruct buffer: [],
+  defstruct buffer: %{},
             buffer_size: 0,
             format: @default_format,
             level: @default_level,
             max_buffer: @default_max_buffer,
             metadata: @default_metadata,
             labels: nil,
+            derived_labels: {__MODULE__, :no_derived_labels},
             client: nil,
             ref: nil,
             output: nil
@@ -167,6 +176,7 @@ defmodule Svadilfari do
     metadata = Keyword.get(opts, :metadata, @default_metadata) |> configure_metadata()
     max_buffer = Keyword.get(opts, :max_buffer, @default_max_buffer)
     labels = Keyword.fetch!(opts, :labels)
+    derived_labels = Keyword.get(opts, :derived_labels, {__MODULE__, :no_derived_labels})
 
     client =
       Keyword.fetch!(opts, :client)
@@ -188,6 +198,7 @@ defmodule Svadilfari do
       metadata: metadata,
       max_buffer: max_buffer,
       labels: labels,
+      derived_labels: derived_labels,
       client: client
     ]
   end
@@ -211,20 +222,27 @@ defmodule Svadilfari do
   end
 
   defp log_event(level, msg, ts, md, state) do
-    output = [format_entry(level, msg, ts, md, state)]
-    %{state | ref: async_io(state.client, output, state.labels), output: output}
+    {labels, entry} = format_entry(level, msg, ts, md, state)
+    output = %{labels => [entry]}
+    %{state | ref: async_io(state.client, output), output: output}
   end
 
   defp buffer_event(level, msg, ts, md, state) do
     %{buffer: buffer, buffer_size: buffer_size} = state
-    buffer = [format_entry(level, msg, ts, md, state) | buffer]
+    {labels, entry} = format_entry(level, msg, ts, md, state)
+    buffer = Map.update(buffer, labels, [entry], fn entries -> [entry | entries] end)
     %{state | buffer: buffer, buffer_size: buffer_size + 1}
   end
 
-  defp async_io(client, output, labels) do
+  defp async_io(client, output) do
     ref = make_ref()
 
-    Svadilfari.Async.send(client, self(), ref, output, labels)
+    request =
+      output
+      |> Enum.map(fn {labels, entries} -> entries |> Enum.reverse() |> Sleipnir.stream(labels) end)
+      |> Sleipnir.request()
+
+    Svadilfari.Async.send(client, self(), ref, request)
     ref
   end
 
@@ -237,12 +255,20 @@ defmodule Svadilfari do
     end
   end
 
+  # Returns a tuple containg the labels for an entry, and the entry itself
   defp format_entry(level, msg, ts, md, state) do
     timestamp = Sleipnir.Timestamp.from(ts)
 
-    level
-    |> format_event(msg, ts, md, state)
-    |> Sleipnir.entry(timestamp)
+    entry =
+      level
+      |> format_event(msg, ts, md, state)
+      |> Sleipnir.entry(timestamp)
+
+    {module, function} = state.derived_labels
+    derived_labels = apply(module, function, [level, msg, ts, md])
+    labels = derived_labels ++ state.labels
+
+    {labels, entry}
   end
 
   defp format_event(level, msg, ts, md, %__MODULE__{format: format, metadata: keys}) do
@@ -264,13 +290,13 @@ defmodule Svadilfari do
     end)
   end
 
-  defp log_buffer(%{buffer_size: 0, buffer: []} = state), do: state
+  defp log_buffer(%{buffer_size: 0, buffer: %{}} = state), do: state
 
   defp log_buffer(state) do
     %{
       state
-      | ref: async_io(state.client, state.buffer, state.labels),
-        buffer: [],
+      | ref: async_io(state.client, state.buffer),
+        buffer: %{},
         buffer_size: 0,
         output: state.buffer
     }
@@ -291,4 +317,6 @@ defmodule Svadilfari do
     |> await_io()
     |> flush()
   end
+
+  def no_derived_labels(_level, _message, _ts, _metadata), do: []
 end
