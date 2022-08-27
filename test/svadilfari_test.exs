@@ -5,10 +5,9 @@ defmodule SvadilfariTest do
   require Logger
 
   alias Sleipnir.Client.Test, as: TestClient
-  alias Svadilfari.SlowClient
 
   def slow_test_client(_) do
-    client = %SlowClient{pid: self()}
+    client = %TestClient{pid: self(), delay_ms: 500}
 
     :ok =
       Logger.configure_backend(
