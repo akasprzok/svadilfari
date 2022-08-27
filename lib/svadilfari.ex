@@ -172,7 +172,7 @@ defmodule Svadilfari do
 
   defp to_config(opts) do
     level = Keyword.get(opts, :level, @default_level)
-    format = Logger.Formatter.compile(Keyword.get(opts, :format))
+    format = opts |> Keyword.get(:format) |> Logger.Formatter.compile()
     metadata = Keyword.get(opts, :metadata, @default_metadata) |> configure_metadata()
     max_buffer = Keyword.get(opts, :max_buffer, @default_max_buffer)
     labels = Keyword.fetch!(opts, :labels)
@@ -235,15 +235,12 @@ defmodule Svadilfari do
   end
 
   defp async_io(client, output) do
-    ref = make_ref()
-
     request =
       output
       |> Enum.map(fn {labels, entries} -> entries |> Enum.reverse() |> Sleipnir.stream(labels) end)
       |> Sleipnir.request()
 
-    Svadilfari.Async.send(client, self(), ref, request)
-    ref
+    Svadilfari.Async.send(client, self(), request)
   end
 
   defp await_io(%{ref: nil} = state), do: state
