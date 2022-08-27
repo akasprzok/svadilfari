@@ -46,6 +46,29 @@ defmodule Svadilfari do
       config :logger, :svadilfari,
         format: "\n$time $metadata[$level] $message\n",
         metadata: [:user_id]
+
+  ## Derived Labels
+
+  The `:derived_labels` option can be used to derive labels at runtime, with the log as input.
+
+  For example, to use the log level as an additional label, first write a function:
+
+      defmodule ExampleModule do
+        def level(level, _message, {_date, _time}, _metadata) do
+          [{"level", Atom.to_string(level)}]
+        end
+      end
+
+  and specify the function in the option:
+
+      config :logger, :svadilfari,
+        derived_labels: {ExampleModule, :level}
+
+  Other use cases include
+  * querying data from other endpoints, such as AWS EC2 metadata, to add to labels.
+    These should be cached as the function is invoked for every log.
+  * extracting certain metadata fields into labels. Make sure cardinality is bounded,
+    for a high number of possible label combinations will blow up the size of Loki's index.
   """
 
   @behaviour :gen_event
@@ -315,5 +338,6 @@ defmodule Svadilfari do
     |> flush()
   end
 
+  @doc false
   def no_derived_labels(_level, _message, _ts, _metadata), do: []
 end
