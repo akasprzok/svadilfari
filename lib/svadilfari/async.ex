@@ -6,6 +6,7 @@ defmodule Svadilfari.Async do
   @spec send(Sleipnir.Client.t(), pid(), Sleipnir.request()) :: reference()
   def send(client, pid, request) do
     ref = make_ref()
+
     Task.Supervisor.async(Svadilfari.TaskSupervisor, fn ->
       client
       |> Sleipnir.push(request)
@@ -15,6 +16,7 @@ defmodule Svadilfari.Async do
         {:error, reason} -> send(pid, {:io_reply, ref, reason})
       end
     end)
+
     ref
   end
 end

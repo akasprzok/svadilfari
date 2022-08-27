@@ -199,6 +199,7 @@ defmodule SvadilfariTest do
 
       [stream] = request.streams
       [entry] = stream.entries
+
       assert entry.line ==
                "file=#{file} line=#{line + 1} module=#{inspect(mod)} function=#{name}/#{arity} "
     end
