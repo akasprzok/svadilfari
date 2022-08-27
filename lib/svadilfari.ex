@@ -286,9 +286,27 @@ defmodule Svadilfari do
 
     {module, function} = state.derived_labels
     derived_labels = apply(module, function, [level, msg, ts, md])
-    labels = derived_labels ++ state.labels
+    labels = merge_labels(state.labels, derived_labels)
 
     {labels, entry}
+  end
+
+  defp merge_labels(labels1, labels2)
+
+  defp merge_labels(labels1, []) when is_list(labels1), do: labels1
+  defp merge_labels([], labels2) when is_list(labels2), do: labels2
+
+  defp merge_labels(labels1, labels2) when is_list(labels1) and is_list(labels2) do
+    fun = fn
+      {key, _value} when is_binary(key) ->
+        not :lists.keymember(key, 1, labels2)
+
+      _ ->
+        raise ArgumentError,
+              "expected a list of tuples as the first argument, got: #{inspect(labels1)}"
+    end
+
+    :lists.filter(fun, labels1) ++ labels2
   end
 
   defp format_event(level, msg, ts, md, %__MODULE__{format: format, metadata: keys}) do

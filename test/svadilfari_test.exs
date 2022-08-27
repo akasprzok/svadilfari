@@ -24,7 +24,7 @@ defmodule SvadilfariTest do
       :ok =
         Logger.configure_backend(Svadilfari,
           labels: [],
-          derived_labels: {__MODULE__, :derived_labels},
+          derived_labels: {__MODULE__, :level_label},
           format: "$message"
         )
 
@@ -68,30 +68,51 @@ defmodule SvadilfariTest do
       assert stream.labels == ~s({service="svadilfari"})
     end
 
-    test "can be derived from function" do
+    test "derived labels overwrite static labels" do
       :ok =
         Logger.configure_backend(Svadilfari,
-          labels: [{"service", "svadilfari"}],
-          derived_labels: {__MODULE__, :derived_labels}
+          labels: [{"level", "info"}]
         )
 
       Logger.debug("hello")
       assert_receive {:push, request}, 1_000
       [stream] = request.streams
-      assert stream.labels == ~s({service="svadilfari",level="debug"})
+      assert stream.labels == ~s({level="info"})
+
+      Logger.configure_backend(Svadilfari,
+        derived_labels: {__MODULE__, :level_label}
+      )
+
+      Logger.debug("hello")
+      assert_receive {:push, request}, 1_000
+      [stream] = request.streams
+      assert stream.labels == ~s({level="debug"})
+    end
+
+    test "can be derived from function" do
+      :ok =
+        Logger.configure_backend(Svadilfari,
+          labels: [{"service", "svadilfari"}],
+          derived_labels: {__MODULE__, :level_label}
+        )
+
+      Logger.debug("hello")
+      assert_receive {:push, request}, 1_000
+      [stream] = request.streams
+      assert stream.labels == ~s({level="debug",service="svadilfari"})
     end
 
     test "like entries are grouped by labels" do
       :ok =
         Logger.configure_backend(Svadilfari,
           labels: [{"service", "svadilfari"}],
-          derived_labels: {__MODULE__, :derived_labels}
+          derived_labels: {__MODULE__, :level_label}
         )
 
       Logger.debug("hello")
       assert_receive {:push, request}, 1_000
       [stream] = request.streams
-      assert stream.labels == ~s({service="svadilfari",level="debug"})
+      assert stream.labels == ~s({level="debug",service="svadilfari"})
     end
   end
 
@@ -209,7 +230,7 @@ defmodule SvadilfariTest do
     "my_format: #{message}"
   end
 
-  def derived_labels(level, _message, _ts, _metadata) do
+  def level_label(level, _message, _ts, _metadata) do
     [{"level", Atom.to_string(level)}]
   end
 end
