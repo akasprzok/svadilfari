@@ -43,7 +43,6 @@ defmodule Svadilfari.MixProject do
     [
       {:sleipnir, "~> 0.1.2"},
       # Testing
-      {:bypass, "~> 2.1", only: :test},
       {:excoveralls, "~> 0.10", only: :test},
       # Docs & Linting
       {:credo, "~> 1.6", only: [:dev, :test], runtime: false},

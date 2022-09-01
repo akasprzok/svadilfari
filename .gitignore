@@ -30,3 +30,5 @@ svadilfari-*.tar
 
 # environment config for local testing.
 .envrc
+
+.DS_Store

@@ -3,14 +3,11 @@ defmodule Svadilfari.Async do
 
   use Task
 
-  def send(client, pid, ref, output, labels) do
-    Task.Supervisor.async(Svadilfari.TaskSupervisor, fn ->
-      request =
-        output
-        |> Enum.reverse()
-        |> Sleipnir.stream(labels)
-        |> Sleipnir.request()
+  @spec send(Sleipnir.Client.t(), pid(), Sleipnir.request()) :: reference()
+  def send(client, pid, request) do
+    ref = make_ref()
 
+    Task.Supervisor.async(Svadilfari.TaskSupervisor, fn ->
       client
       |> Sleipnir.push(request)
       |> case do
@@ -19,5 +16,7 @@ defmodule Svadilfari.Async do
         {:error, reason} -> send(pid, {:io_reply, ref, reason})
       end
     end)
+
+    ref
   end
 end
