@@ -3,7 +3,7 @@ defmodule Svadilfari.Async do
 
   use Task
 
-  @spec send(Sleipnir.Client.t(), pid(), Sleipnir.request()) :: reference()
+  @spec send(Sleipnir.Client.t(), pid(), %{:__struct__ => Logproto.PushRequest}) :: reference()
   def send(client, pid, request) do
     ref = make_ref()
 

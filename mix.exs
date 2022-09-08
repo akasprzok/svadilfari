@@ -41,12 +41,11 @@ defmodule Svadilfari.MixProject do
   # Run "mix help deps" to learn about dependencies.
   defp deps do
     [
-      {:sleipnir, "~> 0.1.2"},
-      # Testing
-      {:excoveralls, "~> 0.10", only: :test},
-      # Docs & Linting
       {:credo, "~> 1.6", only: [:dev, :test], runtime: false},
-      {:ex_doc, "~> 0.28", only: :dev, runtime: false}
+      {:dialyxir, "~> 1.1", only: :dev, runtime: false},
+      {:excoveralls, "~> 0.10", only: :test},
+      {:ex_doc, "~> 0.28", only: :dev, runtime: false},
+      {:sleipnir, "~> 0.1.2"}
     ]
   end
 
