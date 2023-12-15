@@ -25,6 +25,10 @@ Configure some parameters:
 ```elixir
 config :logger, :backends, [:console, Svadilfari]
 
+# This setting is needed because Loki will complain if timestamps are too much off,
+# and Logger sends timestamps without time zone information.
+config :logger, utc_log: true
+
 config :logger, :svadilfari,
   metadata: [:user_id, :bogons],
   max_buffer: 10,
