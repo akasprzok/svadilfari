@@ -1,7 +1,7 @@
 import Config
 
-# config :logger, :backends, [Svadilfari]
-# 
+config :logger, :backends, [Svadilfari]
+
 config :logger, :svadilfari,
   metadata: [:user_id, :bogons],
   max_buffer: 1,

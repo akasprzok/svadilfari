@@ -45,6 +45,7 @@ defmodule Svadilfari.MixProject do
       {:dialyxir, "~> 1.4", only: :dev, runtime: false},
       {:excoveralls, "~> 0.18", only: :test},
       {:ex_doc, "~> 0.34", only: :dev, runtime: false},
+      {:logger_json, "~> 6.0", only: [:dev, :test]},
       {:sleipnir, "~> 0.1"}
     ]
   end
