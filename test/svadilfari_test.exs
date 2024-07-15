@@ -1,3 +1,4 @@
+# credo:disable-for-this-file Credo.Check.Warning.MissedMetadataKeyInLoggerConfig
 defmodule SvadilfariTest do
   use ExUnit.Case
   doctest Svadilfari

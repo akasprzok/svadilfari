@@ -21,8 +21,8 @@ jobs:
         id: beam
         uses: erlef/setup-beam@v1
         with:
-          otp-version: '25'
-          elixir-version: '1.14'
+          otp-version: '26'
+          elixir-version: '1.16'
 
       - name: Cache
         uses: actions/cache@v3
@@ -55,8 +55,8 @@ jobs:
         id: beam
         uses: erlef/setup-beam@v1
         with:
-          otp-version: '25'
-          elixir-version: '1.14'
+          otp-version: '26'
+          elixir-version: '1.16'
 
       - name: Cache
         uses: actions/cache@v3
@@ -88,8 +88,8 @@ jobs:
       - name: Install (Elixir)
         uses: erlef/setup-beam@v1
         with:
-          otp-version: '25'
-          elixir-version: '1.14'
+          otp-version: '26'
+          elixir-version: '1.16'
 
       - name: Install (Mix)
         run: mix deps.get
@@ -105,12 +105,8 @@ jobs:
       fail-fast: false
       matrix:
         versions:
-          - elixir: 1.13
-            otp: 24
-          - elixir: 1.13
-            otp: 25
-          - elixir: 1.14
-            otp: 25
+          - elixir: 1.16
+            otp: 26
 
     env:
       MIX_ENV: test
