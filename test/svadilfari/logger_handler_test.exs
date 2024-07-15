@@ -35,7 +35,15 @@ defmodule Svadilfari.LoggerHandlerTest do
 
   defp add_handler(handler_config \\ %{config: %{}}) do
     client = %TestClient{pid: self()}
-    config = Map.merge(%{client: client}, handler_config.config)
+
+    config =
+      Map.merge(
+        %{
+          labels: [{"env", "test"}],
+          client: client
+        },
+        handler_config.config
+      )
 
     handler_config =
       handler_config
