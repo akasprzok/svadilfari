@@ -121,7 +121,7 @@ defmodule Svadilfari do
   end
 
   def init({__MODULE__, opts}) when is_list(opts) do
-    config = configure_merge(Application.get_env(:logger, :svadilfari), opts)
+    config = configure_merge(Application.get_env(:logger, :svadilfari, []), opts)
     {:ok, do_init(config)}
   end
 
