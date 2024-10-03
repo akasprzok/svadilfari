@@ -18,6 +18,14 @@ def deps do
     {:svadilfari, "~> 0.1"}
   ]
 end
+
+# Also make sure it starts before :logger because logger uses it now
+def application do
+  [
+    ...
+    extra_applications: [..., :svadilfari, :logger, ...]
+    ...
+  ]
 ```
 
 Configure some parameters:
